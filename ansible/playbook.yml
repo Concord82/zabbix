@@ -1,0 +1,6 @@
+---
+- hosts: zabbix-server
+  roles:
+    - network-config
+    - system-config
+    - {role: zabbix-server, tags: zabbix-server}

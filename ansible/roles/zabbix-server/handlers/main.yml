@@ -1,0 +1,12 @@
+---
+- name: restart services
+  systemd:
+    name: "{{ item }}.service"
+    enabled: yes
+    state: restarted
+  with_items:
+    - nginx
+    - php7.4-fpm
+    - zabbix-server 
+    - zabbix-agent
+

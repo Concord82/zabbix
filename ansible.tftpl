@@ -1,0 +1,6 @@
+---
+zabbix-server:
+  hosts: %{ for host in hosts}
+    ${host.name}:
+      ansible_host: ${host.network[0].ip}
+      ansible_user: root%{endfor}     

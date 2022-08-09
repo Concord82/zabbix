@@ -1,0 +1,9 @@
+---
+zabbix_release: "https://repo.zabbix.com/zabbix/5.4/ubuntu/pool/main/z/zabbix-release/zabbix-release_5.4-1+ubuntu20.04_all.deb"
+
+host_name: zabbix.cons.tsk.ru
+
+pg_db: zabbix
+pg_user: zabbix
+pg_password: Ya88%LA3*SsE7c%x
+

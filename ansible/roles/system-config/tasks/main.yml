@@ -1,0 +1,50 @@
+---
+- name: Set timezone
+  timezone:
+    name: Asia/Tomsk
+
+- name: Update and upgrade apt packages
+  apt:
+    upgrade: yes
+    update_cache: yes
+    cache_valid_time: 86400
+
+- name: Install minimum soft
+  ansible.builtin.package:
+    name:
+      - vim
+      - mc
+      - htop
+      - language-pack-ru
+    state: present  
+
+- name: En a locale exists
+  community.general.locale_gen:
+    name: en_US.UTF-8
+    state: present
+
+- name: Ru a locale exists
+  community.general.locale_gen:
+    name: ru_RU.UTF-8
+    state: present
+
+- name: Update locale
+  shell: update-locale LANG=ru_RU.UTF-8
+
+- name: Keyboard config
+  copy:
+    src: keyboard
+    dest: /etc/default/keyboard
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+
+- name: Console font setup
+  copy:
+    src: console-setup
+    dest: /etc/default/console-setup
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes

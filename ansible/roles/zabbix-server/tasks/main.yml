@@ -1,0 +1,133 @@
+---
+- name: Install Zabbix repository
+  apt:
+    deb: '{{ zabbix_release }}'
+    update_cache: yes
+
+
+- name: Install gnupg2 and postgress
+  ansible.builtin.package:
+    name:
+      - gnupg2
+      - nginx
+      - postgresql 
+      - postgresql-contrib
+      - python3-psycopg2
+    state: present
+
+
+- name: add ppa repo php-7
+  apt_repository:
+    repo: ppa:ondrej/php
+    update_cache: yes
+
+
+- name: Install requirments for zabbix
+  ansible.builtin.package:
+    name:
+      - php7.4 
+      - php7.4-cli 
+      - php7.4-fpm 
+      - php7.4-opcache 
+      - php7.4-curl 
+      - php7.4-mbstring 
+      - php7.4-zip 
+      - php7.4-xml 
+      - php7.4-bcmath 
+      - php7.4-common 
+      - php7.4-gd 
+      - php7.4-ldap 
+      - php7.4-pgsql 
+    state: present
+
+
+- name: Install zabbix-server
+  ansible.builtin.package:
+    name:
+      - zabbix-server-pgsql 
+      - zabbix-frontend-php 
+      - zabbix-nginx-conf 
+      - zabbix-sql-scripts 
+      - zabbix-agent 
+    state: present
+
+
+- name: "Create zabbix user"
+  postgresql_user:
+    state: present
+    name: "{{ pg_user }}"
+    password: "{{ pg_password }}"
+  become: yes
+  become_user: postgres
+
+
+- name: "Create zabbix database"
+  postgresql_db:
+    state: present
+    name: "{{ pg_db }}"
+  become: yes
+  become_user: postgres
+
+
+- name: "Grant all access to app db"
+  postgresql_privs:
+    type: database
+    database: "{{ pg_db }}"
+    roles: "{{ pg_user }}"
+    grant_option: no
+    privs: all
+  become: yes
+  become_user: postgres
+
+
+- name: postgress create schema
+  shell: |
+    zcat /usr/share/doc/zabbix-sql-scripts/postgresql/create.sql.gz | sudo -u zabbix psql zabbix 
+    touch /etc/zabbix/schema.done
+  args:
+    creates: /etc/zabbix/schema.done
+  
+
+- name: Set password
+  lineinfile:
+    dest: /etc/zabbix/zabbix_server.conf 
+    regexp: '^# DBPassword='
+    line: 'DBPassword={{ pg_password }}'
+    state: present
+
+
+- name: Change nginx config
+  lineinfile:
+    dest: /etc/nginx/conf.d/zabbix.conf
+    regexp: "{{item.regexp}}"
+    line: "{{item.line}}"
+    state: present
+  loop:
+    - {regexp: "listen", line: "listen  80;"}
+    - {regexp: "server_name", line: "server_name  {{host_name}};"}
+  notify: restart services
+
+- name: Allow access to tcp ports 
+  community.general.ufw:
+    rule: allow
+    port: '{{ item }}'
+    proto: tcp
+  loop:
+    - '10050'
+    - '10051'
+  tags: ufw
+
+
+- name: Out info
+  debug:
+    msg:
+      - "#####################################################################"
+      - "#       Установка выполнена. Зайдите в веб интерфейс и              #" 
+      - "#               проведите окончательную настроку                    #"
+      - "#####################################################################"
+      - " адресс: http://{{host_name}} "
+      - " логин:  {{pg_user     }}"
+      - " пароль: {{pg_password }}"
+      - "#####################################################################"
+  tags: test
+  
